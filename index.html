@@ -3,200 +3,247 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Block Blast - Admin Edition</title>
+    <title>Block Blast - Rounded Edition</title>
     <style>
-        :root { --primary: #4a90e2; --bg: #121212; --panel: #2c2c2c; }
-        body { font-family: sans-serif; background: var(--bg); color: white; display: flex; flex-direction: column; align-items: center; margin: 0; overflow: hidden; }
+        :root { 
+            --primary: #5465ff; 
+            --bg: #0a0a0c; 
+            --panel: #1c1c21; 
+            --accent: #00d2ff;
+            --radius: 12px; /* すべての角丸の基準 */
+        }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: white; display: flex; flex-direction: column; align-items: center; margin: 0; overflow: hidden; }
         
-        /* ゲーム画面 */
-        #game-container { position: relative; margin-top: 20px; }
-        #grid { display: grid; grid-template-columns: repeat(8, 40px); grid-template-rows: repeat(8, 40px); gap: 2px; background: #333; padding: 5px; border-radius: 4px; }
-        .cell { width: 40px; height: 40px; background: #444; border-radius: 2px; }
-        .cell.filled { background: var(--primary); }
-        
-        #score-display { font-size: 24px; margin: 10px; color: #ffeb3b; }
+        #score-container { font-size: 36px; font-weight: 800; margin: 25px 0; color: #fff; text-shadow: 0 4px 10px rgba(0,0,0,0.3); }
 
-        /* PIN入力ボタン */
-        #pin-trigger { margin-top: 20px; padding: 10px 20px; background: #444; border: none; color: #ccc; border-radius: 20px; cursor: pointer; }
+        /* 8x8 角丸グリッド */
+        #grid { 
+            display: grid; 
+            grid-template-columns: repeat(8, 45px); 
+            grid-template-rows: repeat(8, 45px); 
+            gap: 6px; 
+            background: #25252b; 
+            padding: 12px; 
+            border-radius: 20px; /* 外枠も大きく角丸 */
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+        }
+        .cell { 
+            width: 45px; height: 45px; 
+            background: #121216; 
+            border-radius: var(--radius); /* セルを角丸に */
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .cell.filled { 
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            border-radius: var(--radius);
+        }
 
-        /* テンキーモーダル */
-        #keypad-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); flex-direction: column; justify-content: center; align-items: center; z-index: 100; }
-        .keypad { display: grid; grid-template-columns: repeat(3, 70px); gap: 10px; }
-        .key { width: 70px; height: 70px; background: #333; border: 1px solid #555; color: white; font-size: 20px; border-radius: 50%; cursor: pointer; }
-        .key:active { background: #555; }
-        #pin-display { font-size: 30px; margin-bottom: 20px; letter-spacing: 5px; height: 40px; }
+        /* 持ち駒エリア */
+        #piece-container { display: flex; justify-content: center; gap: 25px; margin-top: 40px; height: 130px; }
+        .piece { display: grid; gap: 4px; cursor: pointer; transition: transform 0.2s ease; }
+        .piece:hover { transform: scale(1.05); }
+        .p-cell { width: 28px; height: 28px; border-radius: 8px; background: #5465ff; }
 
-        /* 管理者フルパネル */
-        #admin-panel { display: none; position: fixed; inset: 0; background: var(--panel); z-index: 200; overflow-y: auto; padding: 20px; }
-        .section { background: #3d3d3d; padding: 15px; margin-bottom: 20px; border-radius: 8px; }
-        input, select { width: 100%; padding: 10px; margin: 10px 0; background: #222; color: white; border: 1px solid #555; }
-        button.action-btn { width: 100%; padding: 10px; margin: 5px 0; cursor: pointer; border: none; border-radius: 4px; font-weight: bold; }
-        .danger { background: #e74c3c; color: white; }
-        .safe { background: #2ecc71; color: white; }
+        /* PIN入力ボタン（角丸カプセル） */
+        #pin-trigger { 
+            margin-top: 30px; padding: 14px 40px; 
+            background: linear-gradient(90deg, #333, #444);
+            border: none; color: #eee; 
+            border-radius: 50px; /* カプセル型 */
+            cursor: pointer; font-weight: 600; letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+        }
 
-        /* 最小化チートパネル */
-        #mini-cheat-panel { display: none; position: fixed; top: 10px; right: 10px; width: 160px; background: rgba(44, 44, 44, 0.9); border: 2px solid var(--primary); border-radius: 8px; z-index: 300; padding: 10px; box-shadow: 0 0 15px rgba(0,0,0,0.5); }
-        #mini-cheat-panel h4 { margin: 0 0 10px 0; font-size: 12px; display: flex; justify-content: space-between; }
-        .mini-btn { width: 100%; font-size: 11px; margin-bottom: 4px; padding: 5px; cursor: pointer; background: #444; color: white; border: 1px solid #666; }
+        /* 管理者パネル（フル） */
+        #admin-panel { 
+            display: none; position: fixed; inset: 0; 
+            background: var(--panel); z-index: 2000; 
+            padding: 40px; border-radius: 0; /* 全画面なので0 */
+        }
+        .section { 
+            background: #2a2a32; padding: 25px; margin-bottom: 25px; 
+            border-radius: 24px; /* 大きな角丸 */
+            border: 1px solid #3a3a45;
+        }
+        input, select { 
+            width: 100%; padding: 15px; margin: 12px 0; 
+            background: #121216; color: white; border: none; 
+            border-radius: var(--radius); font-size: 16px;
+        }
+        .btn { 
+            width: 100%; padding: 16px; margin: 8px 0; 
+            border: none; border-radius: var(--radius); 
+            font-weight: 800; cursor: pointer; text-transform: uppercase;
+        }
+        .danger { background: #ff4757; color: white; }
+        .safe { background: #2ed573; color: white; }
+
+        /* 最小化パネル（角丸フロート） */
+        #mini-panel { 
+            display: none; position: fixed; top: 20px; right: 20px; 
+            width: 150px; background: rgba(28, 28, 33, 0.9); 
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--accent); 
+            border-radius: 20px; z-index: 3000; padding: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .mini-btn { 
+            width: 100%; font-size: 12px; margin-bottom: 8px; 
+            padding: 10px; background: #3a3a45; color: white; 
+            border: none; cursor: pointer; border-radius: 10px;
+        }
     </style>
 </head>
 <body>
 
-    <div id="score-display">SCORE: <span id="score">0</span></div>
+    <div id="score-container"><span id="score">0</span></div>
     
-    <div id="game-container">
-        <div id="grid"></div>
-    </div>
+    <div id="grid"></div>
 
-    <button id="pin-trigger" onclick="toggleKeypad(true)">PINコード入力</button>
+    <div id="piece-container"></div>
 
-    <div id="keypad-modal">
-        <div id="pin-display"></div>
-        <div class="keypad">
-            <button class="key" onclick="pressKey('1')">1</button>
-            <button class="key" onclick="pressKey('2')">2</button>
-            <button class="key" onclick="pressKey('3')">3</button>
-            <button class="key" onclick="pressKey('4')">4</button>
-            <button class="key" onclick="pressKey('5')">5</button>
-            <button class="key" onclick="pressKey('6')">6</button>
-            <button class="key" onclick="pressKey('7')">7</button>
-            <button class="key" onclick="pressKey('8')">8</button>
-            <button class="key" onclick="pressKey('9')">9</button>
-            <button class="key" style="background:#c0392b" onclick="pressKey('C')">C</button>
-            <button class="key" onclick="pressKey('0')">0</button>
-            <button class="key" style="background:#27ae60" onclick="pressKey('E')">↵</button>
+    <button id="pin-trigger" onclick="openPinModal()">PINコード入力 / 英数字</button>
+
+    <div id="pin-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:5000; flex-direction:column; justify-content:center; align-items:center;">
+        <div style="background:var(--panel); padding:40px; border-radius:30px; text-align:center; width:300px;">
+            <h3 style="margin-top:0;">ENTER ACCESS CODE</h3>
+            <input type="text" id="pin-input" placeholder="Type here..." autofocus style="text-align:center;">
+            <button class="btn safe" onclick="submitPin()">ENTER</button>
+            <button onclick="closePinModal()" style="background:none; border:none; color:#888; cursor:pointer; margin-top:10px;">CANCEL</button>
         </div>
-        <button onclick="toggleKeypad(false)" style="margin-top:20px; background:none; border:none; color:white;">キャンセル</button>
     </div>
 
     <div id="admin-panel">
-        <div style="display:flex; justify-content: space-between; align-items: center;">
-            <h2>管理者設定画面</h2>
-            <button onclick="closeAdminPanel()" style="background:none; border:none; color:white; font-size:24px;">×</button>
+        <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom:30px;">
+            <h1 style="margin:0; font-size:32px;">Admin Center</h1>
+            <button onclick="closeAdminPanel()" style="background:#3a3a45; border:none; color:white; width:45px; height:45px; border-radius:50%; font-size:20px; cursor:pointer;">×</button>
         </div>
 
         <div class="section">
-            <h3>チートコード作成フォーム</h3>
-            <label>割り当てる数字:</label>
-            <input type="number" id="new-pin" placeholder="例: 777">
-            <label>効果を選択:</label>
-            <select id="new-effect">
-                <option value="x2">スコア2倍</option>
-                <option value="x4">スコア4倍</option>
-                <option value="x10">スコア10倍</option>
-                <option value="init1M">スコア初期値100万</option>
+            <h3 style="margin-top:0;">Custom PIN Generator</h3>
+            <input type="text" id="custom-pin" placeholder="Enter custom code (e.g. MEGA)">
+            <select id="custom-effect">
+                <option value="x2">Score x2</option>
+                <option value="x10">Score x10</option>
+                <option value="init1M">Start with 1,000,000</option>
             </select>
-            <button class="action-btn safe" onclick="createCheatCode()">コードを保存</button>
+            <button class="btn safe" onclick="saveCheat()">Generate Code</button>
         </div>
 
-        <hr>
-        
         <div class="section">
-            <h3>管理者限定チートパネル</h3>
-            <p>※以下はリアルタイム操作用です</p>
-            <button class="action-btn danger" onclick="execCheat('1000x')">スコア1000倍</button>
-            <button class="action-btn danger" onclick="execCheat('clear')">ブロック内即時全消し</button>
-            <button class="action-btn danger" onclick="execCheat('auto')">AUTO操作 (ON/OFF)</button>
-            <button class="action-btn danger" onclick="execCheat('10M')">スコア即時1000万</button>
-            
-            <button class="action-btn" style="background:#f39c12; color:white; margin-top:20px;" onclick="minimizePanel()">パネルを最小化</button>
+            <h3>Direct Cheat Controls</h3>
+            <button class="btn danger" onclick="cheatAction('1000x')">1000x MULTIPLIER</button>
+            <button class="btn danger" onclick="cheatAction('clear')">CLEAR GRID NOW</button>
+            <button class="btn danger" onclick="cheatAction('auto')">TOGGLE AUTO-BOT</button>
+            <button class="btn danger" onclick="cheatAction('10M')">SET 10,000,000 PTS</button>
+            <button class="btn" style="background:#5465ff; color:white;" onclick="minimizeAdmin()">MINIMIZE TO CORNER</button>
         </div>
     </div>
 
-    <div id="mini-cheat-panel">
-        <h4>CHEAT MENU <span onclick="closeMiniPanel()" style="cursor:pointer;">[×]</span></h4>
-        <button class="mini-btn" onclick="execCheat('1000x')">1000x</button>
-        <button class="mini-btn" onclick="execCheat('clear')">全消し</button>
-        <button class="mini-btn" onclick="execCheat('auto')">AUTO</button>
-        <button class="mini-btn" onclick="execCheat('10M')">1000万</button>
+    <div id="mini-panel">
+        <div style="font-size:11px; font-weight:bold; margin-bottom:10px; color:var(--accent); display:flex; justify-content:space-between;">
+            MOD ACTIVE <span onclick="closeMini()" style="cursor:pointer;">×</span>
+        </div>
+        <button class="mini-btn" onclick="cheatAction('1000x')">1000x</button>
+        <button class="mini-btn" onclick="cheatAction('clear')">Clear</button>
+        <button class="mini-btn" onclick="cheatAction('auto')">Auto</button>
+        <button class="mini-btn" onclick="cheatAction('10M')">10M</button>
     </div>
 
-    <script>
-        // ゲーム変数
-        let score = 0;
-        let multiplier = 1;
-        let currentInput = "";
-        let customCheats = {}; // { "コード": "効果" }
+<script>
+    /* --- Game Logic --- */
+    let score = 0;
+    let scoreMultiplier = 1;
+    let customCheats = {};
 
-        // グリッド初期化
-        const gridEl = document.getElementById('grid');
+    function init() {
+        const grid = document.getElementById('grid');
         for(let i=0; i<64; i++) {
             const cell = document.createElement('div');
             cell.className = 'cell';
-            gridEl.appendChild(cell);
+            cell.id = `cell-${i}`;
+            grid.appendChild(cell);
         }
+        spawn();
+        updateScore();
+    }
 
-        // テンキー操作
-        function toggleKeypad(show) {
-            document.getElementById('keypad-modal').style.display = show ? 'flex' : 'none';
-            currentInput = "";
-            updatePinDisplay();
-        }
-
-        function pressKey(key) {
-            if(key === 'C') currentInput = "";
-            else if(key === 'E') checkPin();
-            else if(currentInput.length < 10) currentInput += key;
-            updatePinDisplay();
-        }
-
-        function updatePinDisplay() {
-            document.getElementById('pin-display').innerText = currentInput;
-        }
-
-        // PINチェック
-        function checkPin() {
-            if(currentInput === "admin1371") {
-                openAdminPanel();
-            } else if(customCheats[currentInput]) {
-                applyCustomCheat(customCheats[currentInput]);
-            } else {
-                alert("Invalid Code");
+    function spawn() {
+        const container = document.getElementById('piece-container');
+        container.innerHTML = '';
+        for(let i=0; i<3; i++) {
+            const p = document.createElement('div');
+            p.className = 'piece';
+            p.style.gridTemplateColumns = 'repeat(2, 28px)';
+            // 2x2の角丸ブロックを生成
+            for(let j=0; j<4; j++) {
+                const c = document.createElement('div');
+                c.className = 'p-cell';
+                p.appendChild(c);
             }
-            toggleKeypad(false);
+            p.onclick = () => placeRandom(p);
+            container.appendChild(p);
         }
+    }
 
-        // 管理パネル制御
-        function openAdminPanel() { document.getElementById('admin-panel').style.display = 'block'; }
-        function closeAdminPanel() { document.getElementById('admin-panel').style.display = 'none'; }
-        function minimizePanel() {
-            closeAdminPanel();
-            document.getElementById('mini-cheat-panel').style.display = 'block';
+    function placeRandom(el) {
+        // 簡易配置
+        const emptyCells = Array.from(document.querySelectorAll('.cell:not(.filled)'));
+        if(emptyCells.length >= 4) {
+            for(let i=0; i<4; i++) emptyCells[i].classList.add('filled');
+            score += 40 * scoreMultiplier;
+            updateScore();
+            el.style.opacity = '0';
+            setTimeout(() => {
+                el.remove();
+                if(container.children.length === 0) spawn();
+            }, 200);
         }
-        function closeMiniPanel() { document.getElementById('mini-cheat-panel').style.display = 'none'; }
+    }
 
-        // チート作成
-        function createCheatCode() {
-            const pin = document.getElementById('new-pin').value;
-            const effect = document.getElementById('new-effect').value;
-            if(!pin) return alert("PINを入力してください");
-            customCheats[pin] = effect;
-            alert(`コード ${pin} を登録しました`);
+    /* --- Admin Logic --- */
+    function openPinModal() { 
+        document.getElementById('pin-modal').style.display = 'flex'; 
+        document.getElementById('pin-input').focus();
+    }
+    function closePinModal() { document.getElementById('pin-modal').style.display = 'none'; }
+    
+    function submitPin() {
+        const pin = document.getElementById('pin-input').value;
+        if(pin === 'admin1371') {
+            document.getElementById('admin-panel').style.display = 'block';
+        } else if(customCheats[pin]) {
+            applyEffect(customCheats[pin]);
         }
+        document.getElementById('pin-input').value = '';
+        closePinModal();
+    }
 
-        function applyCustomCheat(type) {
-            if(type === 'x2') multiplier = 2;
-            if(type === 'x4') multiplier = 4;
-            if(type === 'x10') multiplier = 10;
-            if(type === 'init1M') { score = 1000000; updateScore(); }
-            alert("チート発動: " + type);
-        }
+    function saveCheat() {
+        const p = document.getElementById('custom-pin').value;
+        const e = document.getElementById('custom-effect').value;
+        if(p) { customCheats[p] = e; alert('Code Registered!'); }
+    }
 
-        // 管理者限定機能
-        function execCheat(type) {
-            if(type === '1000x') multiplier = 1000;
-            if(type === '10M') { score = 10000000; updateScore(); }
-            if(type === 'clear') {
-                document.querySelectorAll('.cell').forEach(c => c.classList.remove('filled'));
-            }
-            if(type === 'auto') {
-                alert("AUTOモードを切り替えました（ロジック実装待ち）");
-            }
-        }
+    function applyEffect(eff) {
+        if(eff === 'x10') scoreMultiplier = 10;
+        if(eff === 'init1M') { score = 1000000; updateScore(); }
+        alert('Cheat Applied!');
+    }
 
-        function updateScore() {
-            document.getElementById('score').innerText = score.toLocaleString();
-        }
-    </script>
+    function cheatAction(type) {
+        if(type === '1000x') scoreMultiplier = 1000;
+        if(type === '10M') { score = 10000000; updateScore(); }
+        if(type === 'clear') { document.querySelectorAll('.cell').forEach(c => c.classList.remove('filled')); }
+        if(type === 'auto') { setInterval(() => { document.querySelector('.piece')?.click(); }, 100); }
+    }
+
+    function updateScore() { document.getElementById('score').innerText = score.toLocaleString(); }
+    function minimizeAdmin() { document.getElementById('admin-panel').style.display = 'none'; document.getElementById('mini-panel').style.display = 'block'; }
+    function closeMini() { document.getElementById('mini-panel').style.display = 'none'; }
+
+    init();
+</script>
 </body>
 </html>
